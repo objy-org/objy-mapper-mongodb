@@ -2,7 +2,6 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var Admin = mongoose.mongo.Admin;
 
-
 var clientSchema = {
     name: String
 };
