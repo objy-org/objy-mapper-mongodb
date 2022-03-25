@@ -1,0 +1,26 @@
+{
+  "name": "objy-mapper-mongodb",
+  "version": "0.0.1",
+  "description": "A storage mapper for mongodb",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/objy-org/objy-mapper-mongodb.git"
+  },
+  "keywords": [
+  ],
+  "author": "Marco Boelling",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/objy-org/objy-mapper-mongodb/issues"
+  },
+  "homepage": "https://github.com/objy-org/objy-mapper-mongodb#readme",
+  "dependencies": {
+    "mongoose": "6.0.11",
+    "shortid": "^2.2.15"
+  },
+  "devDependencies": {
+    "jest": "^25.1.0",
+    "tinyify": "^2.5.2"
+  }
+}
