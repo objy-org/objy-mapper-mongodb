@@ -1,7 +1,5 @@
 # OBJY storage mapper for mongodb
 
-A collection of adapters for using the right technologies for specific use cases and building domain specific object families. 
-
 ## Installing
 
 ```
