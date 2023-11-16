@@ -30,4 +30,4 @@ OBJY.Object({name: "Hello World"}).add(function(data)
 
 ## License
 
-This project itself is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details. 
+This project itself is licensed under the MIT License. 

@@ -232,7 +232,6 @@ Mapper = function(OBJY, options) {
 
             if (app) criteria['applications'] = { $in: [app] }
 
-            console.log('using criteria', JSON.stringify(criteria, null, 4))
 
             var finalQuery = Obj.find(criteria)
 
@@ -258,12 +257,9 @@ Mapper = function(OBJY, options) {
                         error(err);
                         return;
                     }
-                    
-                    console.log('aggr data', data);
 
                     if(data.length){
                         data.forEach(d => {
-                            console.log(match)
                             if(match.inherits) d.inherits = match.inherits.$in;
                         })
                     }
@@ -274,15 +270,12 @@ Mapper = function(OBJY, options) {
 
             } else {
 
-                console.warn(criteria.$aggregate)
-
                 finalQuery.lean().exec(function(err, data) {
                     if (err) {
                         console.warn('mongo err', err)
                         error(err);
                         return;
                     }
-                    console.warn('data', data);
                     success(data);
                     return;
                 });
@@ -344,14 +337,11 @@ Mapper = function(OBJY, options) {
 
         add: function(spooElement, success, error, app, client) {
 
-            console.log('add:', spooElement);
             var db = this.getDBByMultitenancy(client);
 
             if (app) {
                 if (spooElement.applications.indexOf(app) == -1) spooElement.applications.push(app);
             }
-
-            console.log(this.objectFamily);
 
             var Obj = db.model(this.objectFamily, this.ObjSchema);
 
@@ -364,7 +354,6 @@ Mapper = function(OBJY, options) {
 
             new Obj(spooElement).save(function(err, data) {
 
-                console.log('added', err, data);
                 if (err) {
                     error(parseError(err));
                     return;
@@ -395,7 +384,6 @@ Mapper = function(OBJY, options) {
                 }
                 if (data.n == 0) error("object not found");
                 else {
-                    console.log("remove success");
                     success(true);
                 }
 
