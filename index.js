@@ -2,6 +2,8 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var Admin = mongoose.mongo.Admin;
 
+mongoose.set('autoCreate', false);
+
 var clientSchema = {
     name: String
 };
