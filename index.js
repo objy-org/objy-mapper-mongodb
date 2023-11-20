@@ -8,7 +8,7 @@ var clientSchema = {
     name: String
 };
 var ClientSchema = new Schema(clientSchema);
-
+ 
 function parseError(err) {
     console.log('err', err);
     return err;
