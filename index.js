@@ -227,6 +227,8 @@ Mapper = function(OBJY, options) {
                     s[flags.$sort] = 1;
                 }
 
+                s['_id'] = -1;
+
                 arr.push({ $sort: s })
             }
 
