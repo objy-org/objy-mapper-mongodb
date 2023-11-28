@@ -320,7 +320,7 @@ Mapper = function(OBJY, options) {
 
             const Obj = db.collection(pluralize(this.objectFamily));
 
-            var criteria = { _id: spooElement._id };
+            var criteria = { _id: new ObjectId(spooElement._id) };
 
             if (app) criteria['applications'] = { $in: [app] }
 
