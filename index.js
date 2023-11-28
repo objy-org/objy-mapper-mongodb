@@ -91,7 +91,7 @@ Mapper = function(OBJY, options) {
                 } else {
 
                     ClientInfo.insertMany([{ name: client }]).then(function(data) {
-                        success(data[0]);
+                        success({ name: client });
                     }).catch(err => {
                         error(parseError(err));
                     })
