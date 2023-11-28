@@ -277,6 +277,8 @@ Mapper = function(OBJY, options) {
 
             if (this.multitenancy == this.CONSTANTS.MULTITENANCY.SHARED && client) criteria['tenantId'] = client;
 
+            delete spooElement._id;
+
             Obj.replaceOne(criteria, JSON.parse(JSON.stringify(spooElement))).then(function(data) {
                 if (data.n != 0) success(spooElement);
                 else error("object not found");
