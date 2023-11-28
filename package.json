@@ -16,6 +16,7 @@
   "homepage": "https://github.com/objy-org/objy-mapper-mongodb#readme",
   "dependencies": {
     "mongodb": "5.0.0",
+    "mongoose-legacy-pluralize": "^2.0.0",
     "shortid": "^2.2.15"
   },
   "devDependencies": {

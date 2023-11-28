@@ -1,4 +1,5 @@
 const { MongoClient, ObjectId } = require('mongodb');
+var pluralize = require('mongoose-legacy-pluralize');
 
 function parseError(err) {
     console.log('err', err);
@@ -138,7 +139,7 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
-            const Obj = db.collection(this.objectFamily);
+            const Obj = db.collection(pluralize(this.objectFamily));
 
             if (typeof id === "string") id = new ObjectId(id);
 
@@ -160,7 +161,7 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
-            const Obj = db.collection(this.objectFamily);
+            const Obj = db.collection(pluralize(this.objectFamily));
 
             if (flags.$page == 1) flags.$page = 0;
             else flags.$page -= 1;
@@ -244,7 +245,7 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
-            const Obj = db.collection(this.objectFamily);
+            const Obj = db.collection(pluralize(this.objectFamily));
 
             if (criteria.$query) {
                 criteria = JSON.parse(JSON.stringify(criteria.$query));
@@ -266,7 +267,7 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
-            const Obj = db.collection(this.objectFamily);
+            const Obj = db.collection(pluralize(this.objectFamily));
 
             var criteria = { _id: spooElement._id };
 
@@ -286,7 +287,7 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
-            const Obj = db.collection(this.objectFamily);
+            const Obj = db.collection(pluralize(this.objectFamily));
 
             if (app) {
                 if (spooElement.applications.indexOf(app) == -1) spooElement.applications.push(app);
@@ -313,7 +314,7 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
-            const Obj = db.collection(this.objectFamily);
+            const Obj = db.collection(pluralize(this.objectFamily));
 
             var criteria = { _id: spooElement._id };
 
