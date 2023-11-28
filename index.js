@@ -307,7 +307,7 @@ Mapper = function(OBJY, options) {
             if(!Array.isArray(spooElement)) spooElement = [spooElement];
 
             Obj.insertMany(spooElement).then(function(data) {
-                success(data);
+                success(spooElement);
             }).catch(err => {
                 error(parseError(err));
             })
