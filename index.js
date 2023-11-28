@@ -202,7 +202,7 @@ Mapper = function(OBJY, options) {
             var finalQuery = Obj.find(criteria);
 
             if (flags.$limit) finalQuery.limit(flags.$limit).sort(s);
-            else finalQuery.limit((flags.$pageSize || this.globalPaging)).skip((flags.$pageSize || this.globalPaging) * (flags.$page || 0)).sort(s);
+            else finalQuery.limit(parseInt(flags.$pageSize || this.globalPaging)).skip(parseInt((flags.$pageSize || this.globalPaging) * (flags.$page || 0))).sort(s);
 
             if (criteria.$sum || criteria.$count || criteria.$avg) {
                 var aggregation = JSON.parse(JSON.stringify(criteria.$sum || criteria.$count || criteria.$avg));;
