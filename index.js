@@ -269,6 +269,8 @@ Mapper = function(OBJY, options) {
 
             const Obj = db.collection(pluralize(this.objectFamily));
 
+            if (typeof spooElement._id === "string") spooElement._id = new ObjectId(spooElement._id);
+
             var criteria = { _id: spooElement._id };
 
             if (app) criteria.applications = { $in: [app] };
