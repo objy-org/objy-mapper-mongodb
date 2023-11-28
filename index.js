@@ -84,27 +84,21 @@ Mapper = function(OBJY, options) {
 
             const ClientInfo = db.collection('clientinfos');
 
-            ClientInfo.find({ name: client }).exec(function(err, data) {
-                if (err) {
-                    error(err);
-                    return;
-                }
+            ClientInfo.find({ name: client }).toArray().then(function(data) {
+               
                 if (data.length >= 1) {
                     error("client name already taken")
                 } else {
 
-                    new ClientInfo({ name: client }).save(function(err, data) {
-                        if (err) {
-
-                            error(err);
-                            return;
-                        }
-
-                        success(data);
-
+                    ClientInfo.insertMany([{ name: client }]).then(function(data) {
+                        success(data[0]);
+                    }).catch(err => {
+                        error(parseError(err));
                     })
                 }
 
+            }).catch(err => {
+                error(err);
             });
         },
 
