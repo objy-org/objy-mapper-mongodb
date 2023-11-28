@@ -112,7 +112,7 @@ Mapper = function(OBJY, options) {
         listClients: function(success, error) {
 
             if (this.multitenancy == this.CONSTANTS.MULTITENANCY.ISOLATED) {
-                const admin = client.db("admin");
+                const admin = this.getDBByMultitenancy('admin');
 
                 admin.command({ listDatabases: 1, nameOnly: true }).then(function(result) {
                     success(result.databases.map(function(item) {
