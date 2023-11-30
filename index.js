@@ -307,8 +307,13 @@ Mapper = function(OBJY, options) {
             if(!Array.isArray(spooElement)) spooElement = [spooElement];
 
             Obj.insertMany(spooElement).then(function(data) {
-                spooElement._id = data.insertedIds["0"];
-                success(spooElement);
+                if(Object.keys(data.insertedIds).length == 1){
+                    spooElement[0]._id = data.insertedIds["0"];
+                    success(spooElement[0]);
+                } else {
+                    success(spooElement);
+                }
+                
             }).catch(err => {
                 error(parseError(err));
             })
