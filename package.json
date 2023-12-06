@@ -7,8 +7,7 @@
     "type": "git",
     "url": "git+https://github.com/objy-org/objy-mapper-mongodb.git"
   },
-  "keywords": [
-  ],
+  "keywords": [],
   "author": "Marco Boelling",
   "license": "MIT",
   "bugs": {
@@ -16,11 +15,13 @@
   },
   "homepage": "https://github.com/objy-org/objy-mapper-mongodb#readme",
   "dependencies": {
-    "mongoose": "6.0.11",
+    "mongodb": "5.0.0",
+    "mongoose-legacy-pluralize": "^2.0.0",
     "shortid": "^2.2.15"
   },
   "devDependencies": {
     "jest": "^25.1.0",
-    "tinyify": "^2.5.2"
+    "tinyify": "^2.5.2",
+    "objy": "latest"
   }
 }

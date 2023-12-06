@@ -1,14 +1,6 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-var Admin = mongoose.mongo.Admin;
+const { MongoClient, ObjectId } = require('mongodb');
+var pluralize = require('mongoose-legacy-pluralize');
 
-mongoose.set('autoCreate', false);
-
-var clientSchema = {
-    name: String
-};
-var ClientSchema = new Schema(clientSchema);
- 
 function parseError(err) {
     console.log('err', err);
     return err;
@@ -47,16 +39,6 @@ Mapper = function(OBJY, options) {
 
         staticDatabase: null,
 
-        ObjSchema: new Schema(this.generalObjectModel, { minimize: false, strict: false }),
-
-        NestedSchema: new Schema({}, { minimize: false }),
-
-        structure: function(structure) {
-            this.generalObjectModel = Object.assign(this.generalObjectModel, structure);
-            this.generalObjectModel.properties = Object.assign(this.generalObjectModel.properties, structure.structure);
-            this.ObjSchema = new Schema(this.generalObjectModel, { minimize: false });
-            return this;
-        },
 
         setStaticDatabase(name) {
             this.staticDatabase = name;
@@ -65,14 +47,12 @@ Mapper = function(OBJY, options) {
 
         connect: function(connectionString, success, error, options) {
 
-            this.database = mongoose.createConnection(connectionString, options);
+            this.database = new MongoClient(connectionString);
 
-            this.database.on('error', function(err) {
-                error(err)
-            });
-
-            this.database.once('open', function() {
-                success();
+            this.database.connect().then(_success => {
+                success()
+            }).catch(e => {
+                error(e)
             });
 
             return this;
@@ -85,14 +65,6 @@ Mapper = function(OBJY, options) {
         useConnection: function(connection, success, error) {
             this.database = connection;
 
-            this.database.on('error', function(err) {
-                error(err)
-            });
-
-            this.database.once('open', function() {
-                success();
-            });
-
             return this;
         },
 
@@ -101,9 +73,9 @@ Mapper = function(OBJY, options) {
             if (this.staticDatabase) return this.database.useDb(this.staticDatabase)
 
             if (this.multitenancy == this.CONSTANTS.MULTITENANCY.SHARED) {
-                return this.database.useDb('spoo')
+                return this.database.db('spoo')
             } else if (this.multitenancy == this.CONSTANTS.MULTITENANCY.ISOLATED) {
-                return this.database.useDb(client)
+                return this.database.db(client);
             }
         },
 
@@ -111,62 +83,53 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
-            var ClientInfo = db.model('clientinfos', ClientSchema);
+            const ClientInfo = db.collection('clientinfos');
 
-            ClientInfo.find({ name: client }).exec(function(err, data) {
-                if (err) {
-                    error(err);
-                    return;
-                }
+            ClientInfo.find({ name: client }).toArray().then(function(data) {
+               
                 if (data.length >= 1) {
                     error("client name already taken")
                 } else {
 
-                    new ClientInfo({ name: client }).save(function(err, data) {
-                        if (err) {
-
-                            error(err);
-                            return;
-                        }
-
-                        success(data);
-
+                    ClientInfo.insertMany([{ name: client }]).then(function(data) {
+                        success({ name: client });
+                    }).catch(err => {
+                        error(parseError(err));
                     })
                 }
 
+            }).catch(err => {
+                error(err);
             });
         },
 
 
         listClients: function(success, error) {
 
-
             if (this.multitenancy == this.CONSTANTS.MULTITENANCY.ISOLATED) {
+                const admin = this.getDBByMultitenancy('admin');
 
-                new Admin(this.database.db).listDatabases(function(err, result) {
-                    if (err) error(err)
+                admin.command({ listDatabases: 1, nameOnly: true }).then(function(result) {
                     success(result.databases.map(function(item) {
                         return item.name
                     }));
-                });
+                }).catch(err => {
+                    error(err)
+                })
 
             } else {
                 var db = this.getDBByMultitenancy('spoo');
 
-                var ClientInfo = db.model('clientinfos', ClientSchema);
+                var ClientInfo = db.collection('clientinfos');
 
-                ClientInfo.find({}).exec(function(err, data) {
-
-                    if (err) {
-
-                        error(err);
-                        return;
-                    }
+                ClientInfo.find({}).then(function(data) {
 
                     success(data.map(function(item) {
                         return item.name
                     }))
 
+                }).catch(err => {
+                    error(err);
                 });
 
             }
@@ -176,22 +139,21 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
+            const Obj = db.collection(pluralize(this.objectFamily));
+
+            if (typeof id === "string") id = new ObjectId(id);
+
             var constrains = { _id: id };
+            
 
             if (app) constrains['applications'] = { $in: [app] }
 
             if (this.multitenancy == this.CONSTANTS.MULTITENANCY.SHARED && client) constrains['tenantId'] = client;
 
-            Obj = db.model(this.objectFamily, this.ObjSchema);
-
-            Obj.findOne(constrains).lean().exec(function(err, data) {
-                if (err) {
-                    error(err);
-                    return;
-                }
-
+            Obj.findOne(constrains).then(function(data) {
                 success(data);
-                return;
+            }).catch(err => {
+                error(err);
             });
         },
 
@@ -199,7 +161,7 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
-            var Obj = db.model(this.objectFamily, this.ObjSchema);
+            const Obj = db.collection(pluralize(this.objectFamily));
 
             if (flags.$page == 1) flags.$page = 0;
             else flags.$page -= 1;
@@ -237,10 +199,10 @@ Mapper = function(OBJY, options) {
             if (app) criteria['applications'] = { $in: [app] }
 
 
-            var finalQuery = Obj.find(criteria)
+            var finalQuery = Obj.find(criteria);
 
             if (flags.$limit) finalQuery.limit(flags.$limit).sort(s);
-            else finalQuery.limit((flags.$pageSize || this.globalPaging)).skip((flags.$pageSize || this.globalPaging) * (flags.$page || 0)).sort(s);
+            else finalQuery.limit(parseInt(flags.$pageSize || this.globalPaging)).skip(parseInt((flags.$pageSize || this.globalPaging) * (flags.$page || 0))).sort(s);
 
             if (criteria.$sum || criteria.$count || criteria.$avg) {
                 var aggregation = JSON.parse(JSON.stringify(criteria.$sum || criteria.$count || criteria.$avg));;
@@ -255,13 +217,8 @@ Mapper = function(OBJY, options) {
                 else if (criteria.$count) pipeline.push({ $group: { _id: { "field": aggregation }, count: { $sum: 1 } } })
                 else if (criteria.$avg) pipeline.push({ $group: { _id: null, avg: { $avg: { $toDouble: aggregation } } } });
 
-                Obj.aggregate(pipeline, function(err, data) {
-                    if (err) {
-                        console.warn('mongo err', err)
-                        error(err);
-                        return;
-                    }
-
+                Obj.aggregate(pipeline).toArray().then(function(data) {
+                   
                     if(data.length){
                         data.forEach(d => {
                             if(match.inherits) d.inherits = match.inherits.$in;
@@ -270,20 +227,16 @@ Mapper = function(OBJY, options) {
                     
                     success(data);
                     return;
+                }).catch(err => {
+                    error(err);
                 });
 
             } else {
-
-                finalQuery.lean().exec(function(err, data) {
-                    if (err) {
-                        console.warn('mongo err', err)
-                        error(err);
-                        return;
-                    }
+                finalQuery.toArray().then(function(data) {
                     success(data);
-                    return;
+                }).catch(err => {
+                    error(err);
                 });
-
             }
 
         },
@@ -292,7 +245,7 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
-            var Obj = db.model(this.objectFamily, this.ObjSchema);
+            const Obj = db.collection(pluralize(this.objectFamily));
 
             if (criteria.$query) {
                 criteria = JSON.parse(JSON.stringify(criteria.$query));
@@ -303,14 +256,10 @@ Mapper = function(OBJY, options) {
 
             if (this.multitenancy == this.CONSTANTS.MULTITENANCY.SHARED && client) criteria['tenantId'] = client;
 
-            Obj.count(criteria).exec(function(err, data) {
-                if (err) {
-                    error(err);
-                    return;
-                }
-
+            Obj.countDocuments(criteria, { hint: "_id_" }).then(function(data) {
                 success({ 'result': data });
-                return;
+            }).catch(err => {
+                error(err);
             });
         },
 
@@ -318,7 +267,9 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
-            var Obj = db.model(this.objectFamily, this.ObjSchema);
+            const Obj = db.collection(pluralize(this.objectFamily));
+
+            if (typeof spooElement._id === "string") spooElement._id = new ObjectId(spooElement._id);
 
             var criteria = { _id: spooElement._id };
 
@@ -326,16 +277,13 @@ Mapper = function(OBJY, options) {
 
             if (this.multitenancy == this.CONSTANTS.MULTITENANCY.SHARED && client) criteria['tenantId'] = client;
 
-            Obj.findOneAndUpdate(criteria, JSON.parse(JSON.stringify(spooElement)), function(err, data) {
+            delete spooElement._id;
 
-                if (err) {
-
-                    error(err);
-                    return;
-                }
+            Obj.replaceOne(criteria, JSON.parse(JSON.stringify(spooElement))).then(function(data) {
                 if (data.n != 0) success(spooElement);
                 else error("object not found");
-
+            }).catch(err => {
+                error(err);
             })
         },
 
@@ -343,28 +291,31 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
+            const Obj = db.collection(pluralize(this.objectFamily));
+
             if (app) {
                 if (spooElement.applications.indexOf(app) == -1) spooElement.applications.push(app);
             }
 
-            var Obj = db.model(this.objectFamily, this.ObjSchema);
-
             //delete spooElement._id;
-            if (!mongoose.Types.ObjectId.isValid(spooElement._id)) delete spooElement._id;
-            else spooElement._id = new mongoose.mongo.ObjectId(spooElement._id);
+            if (!ObjectId.isValid(spooElement._id)) delete spooElement._id;
+            else spooElement._id = new ObjectId(spooElement._id);
 
 
             if (this.multitenancy == this.CONSTANTS.MULTITENANCY.SHARED) spooElement.tenantId = client;
 
-            new Obj(spooElement).save(function(err, data) {
+            if(!Array.isArray(spooElement)) spooElement = [spooElement];
 
-                if (err) {
-                    error(parseError(err));
-                    return;
+            Obj.insertMany(spooElement).then(function(data) {
+                if(Object.keys(data.insertedIds).length == 1){
+                    spooElement[0]._id = data.insertedIds["0"];
+                    success(spooElement[0]);
+                } else {
+                    success(spooElement);
                 }
-
-                success(data);
-
+                
+            }).catch(err => {
+                error(parseError(err));
             })
 
         },
@@ -373,24 +324,21 @@ Mapper = function(OBJY, options) {
 
             var db = this.getDBByMultitenancy(client);
 
-            var Obj = db.model(this.objectFamily, this.ObjSchema);
+            const Obj = db.collection(pluralize(this.objectFamily));
 
-            var criteria = { _id: spooElement._id };
+            var criteria = { _id: new ObjectId(spooElement._id) };
 
             if (app) criteria['applications'] = { $in: [app] }
 
             if (this.multitenancy == this.CONSTANTS.MULTITENANCY.SHARED && client) criteria['tenantId'] = client;
 
-            Obj.deleteOne(criteria, function(err, data) {
-                if (err) {
-                    error(err);
-                    return;
-                }
+            Obj.deleteMany(criteria).then(function(data) {
                 if (data.n == 0) error("object not found");
                 else {
                     success(true);
                 }
-
+            }).catch(err => {
+                error(err);
             })
         }
     })
