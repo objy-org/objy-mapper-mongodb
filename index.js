@@ -178,7 +178,9 @@ Mapper = function (OBJY, options) {
                         return;
                     }
 
-                    data._id = String(data._id);
+                    if (data?._id) {
+                        data._id = String(data._id);
+                    }
 
                     success(data);
                     return;
@@ -254,7 +256,6 @@ Mapper = function (OBJY, options) {
 
                     if (data.length) {
                         data.forEach((d) => {
-                            
                             d._id = String(d._id);
 
                             if (match.inherits) d.inherits = match.inherits.$in;
@@ -353,7 +354,7 @@ Mapper = function (OBJY, options) {
                 }
 
                 data._id = String(data._id);
-                
+
                 success(data);
             });
         },
