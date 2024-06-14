@@ -178,6 +178,8 @@ Mapper = function (OBJY, options) {
                         return;
                     }
 
+                    data._id = String(data._id);
+
                     success(data);
                     return;
                 });
@@ -252,6 +254,9 @@ Mapper = function (OBJY, options) {
 
                     if (data.length) {
                         data.forEach((d) => {
+                            
+                            d._id = String(d._id);
+
                             if (match.inherits) d.inherits = match.inherits.$in;
                         });
                     }
@@ -266,6 +271,11 @@ Mapper = function (OBJY, options) {
                         error(err);
                         return;
                     }
+
+                    data.forEach((d) => {
+                        d._id = String(d._id);
+                    });
+
                     success(data);
                     return;
                 });
@@ -313,6 +323,9 @@ Mapper = function (OBJY, options) {
                     error(err);
                     return;
                 }
+
+                spooElement._id = String(spooElement._id);
+
                 if (data.n != 0) success(spooElement);
                 else error('object not found');
             });
@@ -339,6 +352,8 @@ Mapper = function (OBJY, options) {
                     return;
                 }
 
+                data._id = String(data._id);
+                
                 success(data);
             });
         },
