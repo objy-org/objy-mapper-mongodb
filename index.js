@@ -256,7 +256,7 @@ Mapper = function (OBJY, options) {
 
                     if (data.length) {
                         data.forEach((d) => {
-                            d._id = String(d._id);
+                            //d._id = String(d._id);
 
                             if (match.inherits) d.inherits = match.inherits.$in;
                         });
