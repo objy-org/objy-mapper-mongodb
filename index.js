@@ -17,9 +17,10 @@ function parseError(err) {
 Mapper = function (OBJY, options) {
     return Object.assign(new OBJY.StorageTemplate(OBJY, options), {
         database: {},
+        databases: {},
         index: {},
         globalPaging: 20,
-
+        currentConnectionString: null,
         generalObjectModel: {
             type: { type: String, index: true },
             applications: { type: [String], index: true },
@@ -63,6 +64,7 @@ Mapper = function (OBJY, options) {
         },
 
         connect: function (connectionString, success, error, options) {
+            this.currentConnectionString = connectionString;
             this.database = mongoose.createConnection(connectionString, options);
 
             this.database.on('error', function (err) {
@@ -71,17 +73,31 @@ Mapper = function (OBJY, options) {
 
             this.database.once('open', function () {
                 success();
+                this.currentConnectionString = connectionString;
             });
 
             return this;
         },
 
+        getDBConnection: async function (dbName) {
+            if (!this.databases[dbName]) {
+                this.databases[dbName] = await mongoose.createConnection(this.currentConnectionString, { dbName: dbName });
+                return this.databases[dbName];
+            }
+
+            if (this.databases[dbName]) {
+                return this.databases[dbName];
+            }
+        },
+
         getConnection: function () {
-            return this.database;
+            return { database: this.database, databases: this.databases, currentConnectionString: this.currentConnectionString };
         },
 
         useConnection: function (connection, success, error) {
-            this.database = connection;
+            this.database = connection.database;
+            this.databases = connection.databases;
+            this.currentConnectionString = connection.currentConnectionString;
 
             this.database.on('error', function (err) {
                 error(err);
@@ -94,18 +110,18 @@ Mapper = function (OBJY, options) {
             return this;
         },
 
-        getDBByMultitenancy: function (client) {
-            if (this.staticDatabase) return this.database.useDb(this.staticDatabase, { useCache: true });
+        getDBByMultitenancy: async function (client) {
+            if (this.staticDatabase) return await this.getDBConnection(client);
 
             if (this.multitenancy == this.CONSTANTS.MULTITENANCY.SHARED) {
-                return this.database.useDb('spoo', { useCache: true });
+                return await this.getDBConnection('spoo');
             } else if (this.multitenancy == this.CONSTANTS.MULTITENANCY.ISOLATED) {
-                return this.database.useDb(client, { useCache: true });
+                return await this.getDBConnection(client);
             }
         },
 
-        createClient: function (client, success, error) {
-            var db = this.getDBByMultitenancy(client);
+        createClient: async function (client, success, error) {
+            var db = await this.getDBByMultitenancy(client);
 
             var ClientInfo = db.model('clientinfos', ClientSchema);
 
@@ -129,7 +145,7 @@ Mapper = function (OBJY, options) {
             });
         },
 
-        listClients: function (success, error) {
+        listClients: async function (success, error) {
             if (this.multitenancy == this.CONSTANTS.MULTITENANCY.ISOLATED) {
                 new Admin(this.database.db).listDatabases(function (err, result) {
                     if (err) error(err);
@@ -140,7 +156,7 @@ Mapper = function (OBJY, options) {
                     );
                 });
             } else {
-                var db = this.getDBByMultitenancy('spoo');
+                var db = await this.getDBByMultitenancy('spoo');
 
                 var ClientInfo = db.model('clientinfos', ClientSchema);
 
@@ -159,8 +175,8 @@ Mapper = function (OBJY, options) {
             }
         },
 
-        getById: function (id, success, error, app, client) {
-            var db = this.getDBByMultitenancy(client);
+        getById: async function (id, success, error, app, client) {
+            var db = await this.getDBByMultitenancy(client);
 
             var constrains = { _id: id };
 
@@ -187,8 +203,8 @@ Mapper = function (OBJY, options) {
                 });
         },
 
-        getByCriteria: function (criteria, success, error, app, client, flags) {
-            var db = this.getDBByMultitenancy(client);
+        getByCriteria: async function (criteria, success, error, app, client, flags) {
+            var db = await this.getDBByMultitenancy(client);
 
             var Obj = db.model(this.objectFamily, this.ObjSchema);
 
@@ -283,8 +299,8 @@ Mapper = function (OBJY, options) {
             }
         },
 
-        count: function (criteria, success, error, app, client, flags) {
-            var db = this.getDBByMultitenancy(client);
+        count: async function (criteria, success, error, app, client, flags) {
+            var db = await this.getDBByMultitenancy(client);
 
             var Obj = db.model(this.objectFamily, this.ObjSchema);
 
@@ -308,8 +324,8 @@ Mapper = function (OBJY, options) {
             });
         },
 
-        update: function (spooElement, success, error, app, client) {
-            var db = this.getDBByMultitenancy(client);
+        update: async function (spooElement, success, error, app, client) {
+            var db = await this.getDBByMultitenancy(client);
 
             var Obj = db.model(this.objectFamily, this.ObjSchema);
 
@@ -327,13 +343,13 @@ Mapper = function (OBJY, options) {
 
                 spooElement._id = String(spooElement._id);
 
-                if (data.n != 0) success(spooElement);
+                if (data?.n != 0) success(spooElement);
                 else error('object not found');
             });
         },
 
-        add: function (spooElement, success, error, app, client) {
-            var db = this.getDBByMultitenancy(client);
+        add: async function (spooElement, success, error, app, client) {
+            var db = await this.getDBByMultitenancy(client);
 
             if (app) {
                 if (spooElement.applications.indexOf(app) == -1) spooElement.applications.push(app);
@@ -359,8 +375,8 @@ Mapper = function (OBJY, options) {
             });
         },
 
-        remove: function (spooElement, success, error, app, client) {
-            var db = this.getDBByMultitenancy(client);
+        remove: async function (spooElement, success, error, app, client) {
+            var db = await this.getDBByMultitenancy(client);
 
             var Obj = db.model(this.objectFamily, this.ObjSchema);
 
