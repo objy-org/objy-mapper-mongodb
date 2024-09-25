@@ -81,6 +81,10 @@ Mapper = function (OBJY, options) {
 
         getDBConnection: async function (dbName) {
             if (!this.databases[dbName]) {
+                if (dbName.match(/[\/\\."$\*<>:\|\?]/)) {
+                    return null;
+                }
+
                 this.databases[dbName] = await mongoose.createConnection(this.currentConnectionString, { dbName: dbName });
                 return this.databases[dbName];
             }
@@ -122,6 +126,8 @@ Mapper = function (OBJY, options) {
 
         createClient: async function (client, success, error) {
             var db = await this.getDBByMultitenancy(client);
+
+            if (!db) return error('db not found');
 
             var ClientInfo = db.model('clientinfos', ClientSchema);
 
@@ -178,6 +184,8 @@ Mapper = function (OBJY, options) {
         getById: async function (id, success, error, app, client) {
             var db = await this.getDBByMultitenancy(client);
 
+            if (!db) return error('db not found');
+
             var constrains = { _id: id };
 
             if (app) constrains['applications'] = { $in: [app] };
@@ -205,6 +213,8 @@ Mapper = function (OBJY, options) {
 
         getByCriteria: async function (criteria, success, error, app, client, flags) {
             var db = await this.getDBByMultitenancy(client);
+
+            if (!db) return error('db not found');
 
             var Obj = db.model(this.objectFamily, this.ObjSchema);
 
@@ -302,6 +312,8 @@ Mapper = function (OBJY, options) {
         count: async function (criteria, success, error, app, client, flags) {
             var db = await this.getDBByMultitenancy(client);
 
+            if (!db) return error('db not found');
+
             var Obj = db.model(this.objectFamily, this.ObjSchema);
 
             if (criteria.$query) {
@@ -327,6 +339,8 @@ Mapper = function (OBJY, options) {
         update: async function (spooElement, success, error, app, client) {
             var db = await this.getDBByMultitenancy(client);
 
+            if (!db) return error('db not found');
+
             var Obj = db.model(this.objectFamily, this.ObjSchema);
 
             var criteria = { _id: spooElement._id };
@@ -350,6 +364,8 @@ Mapper = function (OBJY, options) {
 
         add: async function (spooElement, success, error, app, client) {
             var db = await this.getDBByMultitenancy(client);
+
+            if (!db) return error('db not found');
 
             if (app) {
                 if (spooElement.applications.indexOf(app) == -1) spooElement.applications.push(app);
@@ -377,6 +393,8 @@ Mapper = function (OBJY, options) {
 
         remove: async function (spooElement, success, error, app, client) {
             var db = await this.getDBByMultitenancy(client);
+
+            if (!db) return error('db not found');
 
             var Obj = db.model(this.objectFamily, this.ObjSchema);
 

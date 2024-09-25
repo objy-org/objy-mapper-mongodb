@@ -1,6 +1,6 @@
 {
     "name": "objy-mapper-mongodb",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "description": "A storage mapper for mongodb",
     "main": "index.js",
     "repository": {
