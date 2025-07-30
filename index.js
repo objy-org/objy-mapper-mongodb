@@ -1,20 +1,20 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-var Admin = mongoose.mongo.Admin;
+import mongoose from 'mongoose';
+let Schema = mongoose.Schema;
+let Admin = mongoose.mongo.Admin;
 
 mongoose.set('autoCreate', false);
 
-var clientSchema = {
+let clientSchema = {
     name: String,
 };
-var ClientSchema = new Schema(clientSchema);
+let ClientSchema = new Schema(clientSchema);
 
 function parseError(err) {
     console.log('err', err);
     return err;
 }
 
-Mapper = function (OBJY, options) {
+export default function MongoMapper(OBJY, options) {
     return Object.assign(new OBJY.StorageTemplate(OBJY, options), {
         database: {},
         databases: {},
@@ -125,11 +125,11 @@ Mapper = function (OBJY, options) {
         },
 
         createClient: async function (client, success, error) {
-            var db = await this.getDBByMultitenancy(client);
+            let db = await this.getDBByMultitenancy(client);
 
             if (!db) return error('db not found');
 
-            var ClientInfo = db.model('clientinfos', ClientSchema);
+            let ClientInfo = db.model('clientinfos', ClientSchema);
 
             ClientInfo.find({ name: client }).exec(function (err, data) {
                 if (err) {
@@ -162,9 +162,9 @@ Mapper = function (OBJY, options) {
                     );
                 });
             } else {
-                var db = await this.getDBByMultitenancy('spoo');
+                let db = await this.getDBByMultitenancy('spoo');
 
-                var ClientInfo = db.model('clientinfos', ClientSchema);
+                let ClientInfo = db.model('clientinfos', ClientSchema);
 
                 ClientInfo.find({}).exec(function (err, data) {
                     if (err) {
@@ -182,11 +182,11 @@ Mapper = function (OBJY, options) {
         },
 
         getById: async function (id, success, error, app, client) {
-            var db = await this.getDBByMultitenancy(client);
+            let db = await this.getDBByMultitenancy(client);
 
             if (!db) return error('db not found');
 
-            var constrains = { _id: id };
+            let constrains = { _id: id };
 
             if (app) constrains['applications'] = { $in: [app] };
 
@@ -212,11 +212,11 @@ Mapper = function (OBJY, options) {
         },
 
         getByCriteria: async function (criteria, success, error, app, client, flags) {
-            var db = await this.getDBByMultitenancy(client);
+            let db = await this.getDBByMultitenancy(client);
 
             if (!db) return error('db not found');
 
-            var Obj = db.model(this.objectFamily, this.ObjSchema);
+            let Obj = db.model(this.objectFamily, this.ObjSchema);
 
             if (flags.$page == 1) flags.$page = 0;
             else flags.$page -= 1;
@@ -230,10 +230,10 @@ Mapper = function (OBJY, options) {
                 delete criteria.$query;
             }
 
-            var arr = [{ $match: criteria }, { $limit: 20 }];
+            let arr = [{ $match: criteria }, { $limit: 20 }];
             if (flags.$page) arr.push({ $skip: (flags.$pageSize || this.globalPaging) * (flags.$page || 0) });
 
-            var s = {};
+            let s = {};
 
             if (flags.$sort) {
                 if (flags.$sort.charAt(0) == '-') {
@@ -251,7 +251,7 @@ Mapper = function (OBJY, options) {
 
             if (app) criteria['applications'] = { $in: [app] };
 
-            var finalQuery = Obj.find(criteria);
+            let finalQuery = Obj.find(criteria);
 
             if (flags.$limit) finalQuery.limit(flags.$limit).sort(s);
             else
@@ -261,9 +261,9 @@ Mapper = function (OBJY, options) {
                     .sort(s);
 
             if (criteria.$sum || criteria.$count || criteria.$avg) {
-                var aggregation = JSON.parse(JSON.stringify(criteria.$sum || criteria.$count || criteria.$avg));
-                var pipeline = [];
-                var match = criteria.$match;
+                let aggregation = JSON.parse(JSON.stringify(criteria.$sum || criteria.$count || criteria.$avg));
+                let pipeline = [];
+                let match = criteria.$match;
 
                 if (typeof match === 'string') match = JSON.parse(match);
 
@@ -310,11 +310,11 @@ Mapper = function (OBJY, options) {
         },
 
         count: async function (criteria, success, error, app, client, flags) {
-            var db = await this.getDBByMultitenancy(client);
+            let db = await this.getDBByMultitenancy(client);
 
             if (!db) return error('db not found');
 
-            var Obj = db.model(this.objectFamily, this.ObjSchema);
+            let Obj = db.model(this.objectFamily, this.ObjSchema);
 
             if (criteria.$query) {
                 criteria = JSON.parse(JSON.stringify(criteria.$query));
@@ -337,13 +337,13 @@ Mapper = function (OBJY, options) {
         },
 
         update: async function (spooElement, success, error, app, client) {
-            var db = await this.getDBByMultitenancy(client);
+            let db = await this.getDBByMultitenancy(client);
 
             if (!db) return error('db not found');
 
-            var Obj = db.model(this.objectFamily, this.ObjSchema);
+            let Obj = db.model(this.objectFamily, this.ObjSchema);
 
-            var criteria = { _id: spooElement._id };
+            let criteria = { _id: spooElement._id };
 
             if (app) criteria.applications = { $in: [app] };
 
@@ -363,7 +363,7 @@ Mapper = function (OBJY, options) {
         },
 
         add: async function (spooElement, success, error, app, client) {
-            var db = await this.getDBByMultitenancy(client);
+            let db = await this.getDBByMultitenancy(client);
 
             if (!db) return error('db not found');
 
@@ -371,7 +371,7 @@ Mapper = function (OBJY, options) {
                 if (spooElement.applications.indexOf(app) == -1) spooElement.applications.push(app);
             }
 
-            var Obj = db.model(this.objectFamily, this.ObjSchema);
+            let Obj = db.model(this.objectFamily, this.ObjSchema);
 
             //delete spooElement._id;
             if (!mongoose.Types.ObjectId.isValid(spooElement._id)) delete spooElement._id;
@@ -392,13 +392,13 @@ Mapper = function (OBJY, options) {
         },
 
         remove: async function (spooElement, success, error, app, client) {
-            var db = await this.getDBByMultitenancy(client);
+            let db = await this.getDBByMultitenancy(client);
 
             if (!db) return error('db not found');
 
-            var Obj = db.model(this.objectFamily, this.ObjSchema);
+            let Obj = db.model(this.objectFamily, this.ObjSchema);
 
-            var criteria = { _id: spooElement._id };
+            let criteria = { _id: spooElement._id };
 
             if (app) criteria['applications'] = { $in: [app] };
 
@@ -418,4 +418,3 @@ Mapper = function (OBJY, options) {
     });
 };
 
-module.exports = Mapper;

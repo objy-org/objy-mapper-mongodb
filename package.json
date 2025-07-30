@@ -3,6 +3,7 @@
     "version": "0.0.11",
     "description": "A storage mapper for mongodb",
     "main": "index.js",
+    "type": "module",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/objy-org/objy-mapper-mongodb.git"
