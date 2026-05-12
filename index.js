@@ -158,7 +158,7 @@ Mapper = function (OBJY, options) {
                     success(
                         result.databases.map(function (item) {
                             return item.name;
-                        })
+                        }),
                     );
                 });
             } else {
@@ -175,7 +175,7 @@ Mapper = function (OBJY, options) {
                     success(
                         data.map(function (item) {
                             return item.name;
-                        })
+                        }),
                     );
                 });
             }
@@ -236,10 +236,22 @@ Mapper = function (OBJY, options) {
             var s = {};
 
             if (flags.$sort) {
-                if (flags.$sort.charAt(0) == '-') {
-                    s[flags.$sort.slice(1)] = -1;
-                } else {
-                    s[flags.$sort] = 1;
+                if (typeof flags.$sort === 'string' && flags.$sort.startsWith('{')) {
+                    try {
+                        s = JSON.parse(flags.$sort);
+                    } catch (err) {
+                        if (flags.$sort.charAt(0) == '-') {
+                            s[flags.$sort.slice(1)] = -1;
+                        } else {
+                            s[flags.$sort] = 1;
+                        }
+                    }
+                } else if (typeof flags.$sort === 'string') {
+                    if (flags.$sort.charAt(0) == '-') {
+                        s[flags.$sort.slice(1)] = -1;
+                    } else {
+                        s[flags.$sort] = 1;
+                    }
                 }
 
                 s['_id'] = -1;
